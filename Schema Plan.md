@@ -1,101 +1,68 @@
-filament table
-id
-colour
-material
-manufacturer
+* A 'id' primary key is omitted from each table
+* A table marked as a 'lookup table' is a table with an id and a name. The data listed under the table name is some sample data.
+
+```
+filament
+	colour
+	material
+	manufacturer
+	condition
+	remaining_mass
+	roll
+	storage
+	picture
+
+colour lookup table
+	(insert colours)
+
+material lookup table
+	ABS
+	PETG
+	PLA
+	PLA+
+	- fill in some from Ultimaker Cura
+
+manufacturer lookup table
+	(insert manufacturers)
+
 condition
+	isDry -- boolean
+	isClean -- boolean
+
 remaining_mass
+	roll_mass --calculated: original total mass - manufacturer reported filament mass
+	current_total_mass --measured
+	remaining_filament_mass = current_total_mass - roll_mass
+
 roll
-storage
+	type
+	colour
+	size
+
+roll type lookup table
+	loose -> how to handle this case
+	cardboard
+	plastic
+
+roll colour lookup table
+	none -> special case
+	white
+	black
+	brown
+	transparent
+
+roll size lookup table
+	none -> special case
+	small
+	normal
+
+storage lookup table
+	loose
+	permanentely sealed bag
+	resealable bag
+	retail box
+
 picture
-
-colour table
-id
-name
-
-colour data
-- hi
-
-material table
-id
-name
-
-material data
-ABS
-PETG
-PLA
-PLA+
-- fill in some from Ultimaker Cura
-
-manufacturer table
-id
-name
-
-manufacturer data
-- hi
-
-condition table
-id
-isDry
-isClean
-
-remaining_mass table
-id
-original_total_mass --measured
-original_filament_mass --reported by manufacturer
-current_total_mass --measured
--- current total - mass of roll = remaining filament
-remaining_filament_mass = current_total_mass - (original_total_mass - original_filament_mass)
-
-roll table
-id
-type
-colour
-size
-
-roll type table
-id
-name
-
-roll type data
-loose -> how to handle this case
-cardboard
-plastic
-
-roll colour table
-id
-name
-
-roll colour data
-none -> special case
-white
-black
-brown
-transparent
-
-roll size table
-id
-name
-
-roll size data
-none -> special case
-small
-normal
-
-storage table
-id
-name
-
-storage data
-loose
-permanentely sealed bag
-resealable bag
-retail box
-
-picture table
-id
-roll_filename
-colour_filename
-
-picture data
-hi
+	roll_filename
+	colour_filename
+```
