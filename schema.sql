@@ -1,5 +1,6 @@
 -- adding a filament would SUCK
 -- a nicer way to do this would be nice
+	-- select from colour where (match user input)
 -- add some constraints, see which are applicable
 
 CREATE TABLE filament(
@@ -14,6 +15,7 @@ CREATE TABLE filament(
 	picture_id integer REFERENCES picture,
 );
 
+-- filament data
 
 CREATE TABLE colour(
 	id serial PRIMARY KEY,
