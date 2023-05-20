@@ -1,25 +1,6 @@
--- adding a filament would SUCK
--- a nicer way to do this would be nice
-	-- select from colour where (match user input)
--- add some constraints, see which are applicable
-
-CREATE TABLE filament(
-	id serial PRIMARY KEY,
-	colour_id integer REFERENCES colour,
-	material_id integer REFERENCES material,
-	manufacturer_id integer REFERENCES manufacturer,
-	condition_id integer REFERENCES condition,
-	remaining_mass_id integer REFERENCES remaining_mass,
-	roll_id integer REFERENCES roll,
-	storage_id integer REFERENCES storage,
-	picture_id integer REFERENCES picture,
-);
-
--- filament data
-
 CREATE TABLE colour(
 	id serial PRIMARY KEY,
-	name varchar
+	name varchar UNIQUE
 );
 
 INSERT INTO colour(name)
@@ -32,108 +13,121 @@ VALUES
 	('green'), ('dark green'),
 	('blue'), ('light blue'), ('dark blue'),
 	('purple-blue'),
-	('natural'), ('translucent'), ('green glow in the dark'),
+	('natural'), ('translucent'), ('green glow in the dark')
 ;
 
 CREATE TABLE material(
 	id serial PRIMARY KEY,
-	name varchar
+	name varchar UNIQUE
 );
 
 INSERT INTO material(name)
 VALUES ('ABS'), ('PETG'), ('PLA'), ('PLA+');
 -- fill in some more from Ultimaker Cura
 
-CREATE TABLE manufacturer(
+-- more stuff here if desired
+
+CREATE TABLE filament(
 	id serial PRIMARY KEY,
-	name varchar
+	colour_id integer REFERENCES colour ON DELETE RESTRICT,
+	material_id integer REFERENCES material ON DELETE RESTRICT,
+	roll_mass numeric,
+	remaining_filament_grams numeric,
+	reserved_filament_grams numeric DEFAULT 0,
+	usable_filament_grams numeric GENERATED ALWAYS AS (remaining_filament_grams - reserved_filament_grams) STORED,
+	--roll_picture_filename varchar 
+	--colour_picture_filename varchar
+	CONSTRAINT mass_is_positive CHECK (roll_mass >= 0 AND remaining_filament_grams >= 0 AND reserved_filament_grams >= 0),
+	CONSTRAINT filament_not_overreserved CHECK (usable_filament_grams >= 0)
 );
 
-INSERT INTO manufacturer(name)
-VALUES ('CCTREE'), ('eSUN'), ('Filaments.ca'), ('Generic'), ('Imperial Data'), ('MG Chemicals');
-
-CREATE TABLE condition(
-	id serial PRIMARY KEY,
-	is_dry boolean,
-	is_clean boolean,
-)
-
---INSERT INTO condition(isDry, isClean)
---VALUES ...
-
-CREATE TABLE remaining_mass(
-	id serial PRIMARY KEY,
-	--original_total_mass numeric,
-	--original_filament_mass numeric,
-	roll_mass numeric, -- when adding new entry, calculate (original_total_mass - original_filament) automatically
-	total_mass numeric,
-	remaining_filament_mass numeric -- expression, how to implement
--- remaining = total_mass - roll_mass
-)
-
--- remaining_mass data
-
-CREATE TABLE roll(
-	id serial PRIMARY KEY,
-	type integer REFERENCES roll_type,
-	colour integer REFERENCES roll_colour,
-	size integer REFERENCES roll_size
-);
-
-INSERT INTO roll(type, colour, size)
-VALUES
-	(1, 1, 1), -- loose
-	(2, 2, 3), -- white cardboard
-	(3, 3, 2), -- small black plastic
-	(3, 3, 3), -- black plastic
-	(3, 5, 3)  -- transparent plastic
-	--() -- glow in the dark
-	--() -- not original
-;
-
-CREATE TABLE roll_type(
-	id serial PRIMARY KEY,
-	name varchar
-);
-
-INSERT INTO roll_type(name)
-VALUES ('loose'), ('cardboard'), ('plastic');
--- how to handle loose case
-
-CREATE TABLE roll_colour(
-	id serial PRIMARY KEY,
-	name varchar
-);
-
-INSERT INTO roll_colour(name)
-VALUES ('none'), ('white'), ('black'), ('brown'), ('transparent');
--- none special case
-
-CREATE TABLE roll_size(
-	id serial PRIMARY KEY,
-	name varchar
-);
-
-INSERT INTO roll_size(name)
-VALUES ('none'), ('small'), ('normal');
--- none special case
-
-CREATE TABLE storage(
-	id serial PRIMARY KEY,
-	name varchar
-);
-
--- could this be more detailed?
-INSERT INTO storage(name)
-VALUES ('loose'), ('permanently sealed bag'), ('resealable bag'), ('retail box');
-
--- should be a function
--- filenames all follow the same format
--- (document this format)
+/*
 CREATE TABLE picture(
 	id serial PRIMARY KEY,
 	roll_picture_filename varchar,
 	colour_picture_filename varchar
 );
 
--- picture data
+--picture data
+*/
+
+INSERT INTO filament(colour_id, material_id, roll_mass, remaining_filament_grams)
+VALUES (1, 1, 100, 600), (7, 2, 100, 900);
+
+CREATE TABLE project(
+	id serial PRIMARY KEY,
+	name varchar
+);
+
+INSERT INTO project(name)
+VALUES ('shifter'), ('keychain');
+
+CREATE TABLE project_filament(
+	project_id integer REFERENCES project ON DELETE CASCADE, -- delete print-project relationships when project deleted
+	print_name varchar,
+	filament_id integer REFERENCES filament ON DELETE RESTRICT, -- disallow deleting filaments still associated with projects
+	filament_amount numeric CHECK (filament_amount > 0),
+	PRIMARY KEY (project_id, print_name)
+);
+
+INSERT INTO project_filament(project_id, print_name, filament_id, filament_amount)
+VALUES
+	(1, 'base', 1, 250),
+	(1, 'body', 1, 200),
+	(2, 'small', 1, 25),
+	(2, 'normal', 2, 50)
+;
+
+CREATE FUNCTION find_reserved_mass(id integer)
+	RETURNS numeric
+	LANGUAGE PLPGSQL
+	AS
+	'
+	DECLARE
+    	total_reserved_mass numeric;
+	BEGIN
+		SELECT sum(filament_amount)
+    	INTO total_reserved_mass
+		FROM print
+		WHERE filament_id = id;
+    	RETURN total_reserved_mass;
+	END
+	';
+
+CREATE FUNCTION update_reserved_mass()
+	RETURNS TRIGGER
+	LANGUAGE PLPGSQL
+	AS
+	'
+	BEGIN
+		UPDATE filament
+		SET reserved_filament_grams = find_reserved_mass(NEW.filament_id)
+		WHERE NEW.filament_id = id;
+		RETURN NEW;
+	END
+	';
+
+CREATE FUNCTION release_reserved_mass()
+	RETURNS TRIGGER
+	LANGUAGE PLPGSQL
+	AS
+	'
+	BEGIN
+		UPDATE filament
+		SET reserved_filament_grams = find_reserved_mass(OLD.filament_id)
+		WHERE NEW.filament_id = id;
+		RETURN NEW;
+	END
+	';
+
+CREATE TRIGGER update_reserved_mass
+	AFTER INSERT OR UPDATE
+	ON project_filament
+    FOR EACH ROW
+	EXECUTE FUNCTION update_reserved_mass();
+
+CREATE TRIGGER release_reserved_mass
+	AFTER DELETE
+	ON project_filament
+	FOR EACH ROW
+	EXECUTE FUNCTION release_reserved_mass();
