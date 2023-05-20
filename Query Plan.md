@@ -18,7 +18,7 @@
 	* Note: Not colour only, as you should not mix different types of filament in one print.
 
 ### Filtering
-* Find all materials matching of the same...
+* Find all materials of the same...
 	* Material
 	* Material & Colour
 	* Colour
