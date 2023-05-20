@@ -94,6 +94,8 @@ CREATE FUNCTION find_reserved_mass(id integer)
 	END
 	';
 
+-- check value of reserved_filament_grams when row is updated or inserted
+-- will increase reserved_filament_grams
 CREATE FUNCTION update_reserved_mass()
 	RETURNS TRIGGER
 	LANGUAGE PLPGSQL
@@ -107,6 +109,8 @@ CREATE FUNCTION update_reserved_mass()
 	END
 	';
 
+-- check value of reserved_filament_grams when row is deleted
+-- will decrease reserved_filament_grams
 CREATE FUNCTION release_reserved_mass()
 	RETURNS TRIGGER
 	LANGUAGE PLPGSQL
@@ -115,7 +119,7 @@ CREATE FUNCTION release_reserved_mass()
 	BEGIN
 		UPDATE filament
 		SET reserved_filament_grams = find_reserved_mass(OLD.filament_id)
-		WHERE NEW.filament_id = id;
+		WHERE OLD.filament_id = id;
 		RETURN NEW;
 	END
 	';
