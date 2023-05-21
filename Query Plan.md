@@ -2,7 +2,7 @@
 
 ## Query Ideas
 
-### Modifying Data
+### Filaments
 * Add a new filament
 * Update the remaining mass of a filament
 
@@ -11,11 +11,17 @@
 * Mark a project as complete (subtract filament amount)
 * Cancel a project (release filament amount)
 
+### Prints
+* Add a print
+* Mark a print as complete (subtract filament amount)
+* Cancel a print (release filament amount)
+
 ### Aggregation & Grouping
-* Find the total amount of filament of each...
+* Group filaments by...
 	* Material
 	* Material & Colour
 	* Note: Not colour only, as you should not mix different types of filament in one print.
+	* Then, find the total amount of filament in each group.
 
 ### Filtering
 * Find all materials of the same...
