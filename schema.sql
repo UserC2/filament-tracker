@@ -31,12 +31,13 @@ CREATE TABLE filament(
 	id serial PRIMARY KEY,
 	colour_id integer REFERENCES colour ON DELETE RESTRICT,
 	material_id integer REFERENCES material ON DELETE RESTRICT,
-	roll_mass numeric,
+	roll_mass numeric, -- grams?
 	remaining_filament_grams numeric,
 	reserved_filament_grams numeric DEFAULT 0,
 	usable_filament_grams numeric GENERATED ALWAYS AS (remaining_filament_grams - reserved_filament_grams) STORED,
 	--roll_picture_filename varchar 
 	--colour_picture_filename varchar
+	CONSTRAINT mass_not_null NOT NULL (roll_mass, remaining_filament_grams, reserved_filament_grams, usable_filament_grams),
 	CONSTRAINT mass_is_positive CHECK (roll_mass >= 0 AND remaining_filament_grams >= 0 AND reserved_filament_grams >= 0),
 	CONSTRAINT filament_not_overreserved CHECK (usable_filament_grams >= 0)
 );
@@ -56,7 +57,7 @@ VALUES (1, 1, 100, 600), (7, 2, 100, 900);
 
 CREATE TABLE project(
 	id serial PRIMARY KEY,
-	name varchar
+	name varchar UNIQUE
 );
 
 INSERT INTO project(name)
