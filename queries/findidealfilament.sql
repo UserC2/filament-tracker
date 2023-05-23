@@ -12,11 +12,11 @@
 
 -- Use '%' as colour_name or material_name to allow all colours or materials.
 CREATE FUNCTION find_ideal_filament(min_capacity integer, material_name text, colour_name text)
-	RETURNS RECORD
+	RETURNS integer
 	LANGUAGE SQL
 	AS
 	'
-	SELECT *
+	SELECT id
 	FROM
 		filament
 		JOIN colour ON colour_id = colour.id
