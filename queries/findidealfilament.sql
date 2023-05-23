@@ -16,7 +16,7 @@ CREATE FUNCTION find_ideal_filament(min_capacity integer, material_name text, co
 	LANGUAGE SQL
 	AS
 	'
-	SELECT id
+	SELECT filament.id
 	FROM
 		filament
 		JOIN colour ON colour_id = colour.id
