@@ -1,3 +1,5 @@
+-- This file contains pseudocode for various queries.
+
 -- find project id given name
 SELECT project_id
 INTO FOUND_PROJECT_ID
